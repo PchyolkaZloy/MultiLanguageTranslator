@@ -1,0 +1,20 @@
+version: '3.9'
+name: "translator"
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: "postgres_db"
+    shm_size: 128mb
+    environment:
+      POSTGRES_DB: translator
+      POSTGRES_USER: translator
+      POSTGRES_PASSWORD: translator
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./dao/src/main/resources/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - translator_pg_data:/var/lib/postgresql/data
+
+volumes:
+  translator_pg_data:
