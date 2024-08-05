@@ -12,9 +12,9 @@ import java.time.LocalDateTime;
 
 @Repository
 public class TranslationHistoryRepositoryImpl implements TranslationHistoryRepository {
-    @Autowired
     private final ConnectionPool connectionPool;
 
+    @Autowired
     public TranslationHistoryRepositoryImpl(ConnectionPool connectionPool) {
         this.connectionPool = connectionPool;
     }
