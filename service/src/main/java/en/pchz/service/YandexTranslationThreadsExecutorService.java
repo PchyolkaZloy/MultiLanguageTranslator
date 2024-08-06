@@ -39,25 +39,32 @@ public class YandexTranslationThreadsExecutorService implements TranslationThrea
         log.info("Starting translation text: from {} to {}", sourceCode, targetCode);
         List<String> words = Arrays.asList(text.split(" "));
         List<Future<String>> futureList = new ArrayList<>();
+        int sentTaskAmount = 0;
 
-        int totalWords = words.size();
-        for (int i = 0; i < totalWords; i += translationLimitPerSecond) {
-            int end = Math.min(i + translationLimitPerSecond, totalWords);
+        while (sentTaskAmount < words.size()) {
+            int doneTaskAmount = (int) futureList.stream().filter(Future::isDone).count();
 
-            for (int j = i; j < end; j++) {
-                String word = words.get(j);
-                if (word.isEmpty()) continue;
+            if (doneTaskAmount > 0 || futureList.isEmpty()) {
+                int additionalTasks = Math.min(
+                        translationLimitPerSecond - (sentTaskAmount - doneTaskAmount),
+                        words.size() - sentTaskAmount);
 
-                log.debug("Submitting translation task for word: {}", word);
-                futureList.add(executorService.submit(() -> apiService.makeTranslateRequest(word, sourceCode, targetCode)));
+                for (int j = 0; j < additionalTasks; j++) {
+                    String word = words.get(sentTaskAmount + j);
+                    if (word.isEmpty()) continue;
+
+                    log.debug("Submitting additional translation task for word: {}", word);
+                    futureList.add(executorService.submit(() -> apiService.makeTranslateRequest(word, sourceCode, targetCode)));
+                }
+                sentTaskAmount += additionalTasks;
             }
 
             try {
-                log.debug("Throttling requests by sleeping for 1 second");
+                log.debug("Waiting for tasks to complete, checking every second...");
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                log.error("Thread interrupted during sleep", e);
-                throw new TranslationInterruptedException("Thread interrupted during sleep", e);
+                log.error("Main thread interrupted during sleep", e);
+                throw new TranslationInterruptedException("Main thread interrupted during sleep", e);
             }
         }
 
