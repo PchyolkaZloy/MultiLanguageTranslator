@@ -4,5 +4,5 @@ import java.time.LocalDateTime;
 
 
 public interface TranslationHistoryRepository {
-    void save(LocalDateTime dateTime, String ipAddress, String inputText, String translatedText);
+    void save(LocalDateTime requestTime, String ipAddress, String inputText, String translatedText);
 }

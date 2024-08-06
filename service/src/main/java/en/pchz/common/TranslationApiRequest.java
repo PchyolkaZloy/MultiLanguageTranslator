@@ -1,8 +1,8 @@
-package en.pchz.model;
+package en.pchz.common;
 
 import java.util.List;
 
-public record TranslationRequest(
+public record TranslationApiRequest(
         String sourceLanguageCode,
         String targetLanguageCode,
         List<String> texts) {

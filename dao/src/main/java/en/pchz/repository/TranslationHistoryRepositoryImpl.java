@@ -20,7 +20,7 @@ public class TranslationHistoryRepositoryImpl implements TranslationHistoryRepos
     }
 
     @Override
-    public void save(LocalDateTime dateTime, String ipAddress, String inputText, String translatedText) {
+    public void save(LocalDateTime requestTime, String ipAddress, String inputText, String translatedText) {
         String sql = "INSERT INTO translation_requests (request_time, ip_address, input_text, translated_text) VALUES (?, ?, ?, ?)";
 
         Connection connection = null;
@@ -30,7 +30,7 @@ public class TranslationHistoryRepositoryImpl implements TranslationHistoryRepos
             connection = connectionPool.getConnection();
             preparedStatement = connection.prepareStatement(sql);
 
-            preparedStatement.setTimestamp(1, Timestamp.valueOf(dateTime));
+            preparedStatement.setTimestamp(1, Timestamp.valueOf(requestTime));
             preparedStatement.setString(2, ipAddress);
             preparedStatement.setString(3, inputText);
             preparedStatement.setString(4, translatedText);
