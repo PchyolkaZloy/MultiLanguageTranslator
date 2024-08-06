@@ -49,13 +49,14 @@ public final class ConnectionPoolImpl implements ConnectionPool {
         this.connectionPool = pool;
         this.usedConnections = new ArrayList<>();
         log.info(String.format("""
-                Connection pool success initialized with params:
-                Url - %s
-                Username - %s
-                Max pool size - %d
-                Init pool size - %d
-                Max timeout - %d
-                """, username, url, maxPoolSize, initialPoolSize, maxTimeout));
+                        Connection pool success initialized with params:
+                        Url - %s
+                        Username - %s
+                        Max pool size - %d
+                        Init pool size - %d
+                        Max timeout - %d
+                        """,
+                url, username, maxPoolSize, initialPoolSize, maxTimeout));
     }
 
 
