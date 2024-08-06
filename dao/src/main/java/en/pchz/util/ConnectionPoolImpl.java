@@ -1,5 +1,8 @@
 package en.pchz.util;
 
+import en.pchz.exception.ConnectionPoolException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +21,7 @@ public final class ConnectionPoolImpl implements ConnectionPool {
     private final Integer maxTimeout;
     private final List<Connection> connectionPool;
     private final List<Connection> usedConnections;
+    private static final Logger log = LoggerFactory.getLogger(ConnectionPoolImpl.class);
 
 
     public ConnectionPoolImpl(
@@ -32,7 +36,8 @@ public final class ConnectionPoolImpl implements ConnectionPool {
             try {
                 pool.add(DriverManager.getConnection(url, username, password));
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                log.error("Failed to initialize connection pool", e);
+                throw new ConnectionPoolException("Failed to initialize connection pool", e);
             }
         }
 
@@ -43,6 +48,14 @@ public final class ConnectionPoolImpl implements ConnectionPool {
         this.maxTimeout = maxTimeout;
         this.connectionPool = pool;
         this.usedConnections = new ArrayList<>();
+        log.info(String.format("""
+                Connection pool success initialized with params:
+                Url - %s
+                Username - %s
+                Max pool size - %d
+                Init pool size - %d
+                Max timeout - %d
+                """, username, url, maxPoolSize, initialPoolSize, maxTimeout));
     }
 
 
@@ -53,10 +66,12 @@ public final class ConnectionPoolImpl implements ConnectionPool {
                 try {
                     connectionPool.add(DriverManager.getConnection(url, username, password));
                 } catch (SQLException e) {
-                    throw new RuntimeException(e);
+                    log.error("Failed to create new connection", e);
+                    throw new ConnectionPoolException("Failed to create new connection", e);
                 }
             } else {
-                throw new RuntimeException("Maximum pool size reached, no available connections!");
+                log.error("Maximum pool size reached, no available connections!");
+                throw new ConnectionPoolException("Maximum pool size reached, no available connections!");
             }
         }
 
@@ -67,7 +82,8 @@ public final class ConnectionPoolImpl implements ConnectionPool {
                 connection = DriverManager.getConnection(url, username, password);
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            log.error("Failed to validate or recreate connection", e);
+            throw new ConnectionPoolException("Failed to validate or recreate connection", e);
         }
 
         usedConnections.add(connection);
@@ -77,8 +93,13 @@ public final class ConnectionPoolImpl implements ConnectionPool {
 
     @Override
     public boolean releaseConnection(Connection connection) {
-        connectionPool.add(connection);
-        return usedConnections.remove(connection);
+        if (connection != null) {
+            usedConnections.remove(connection);
+            return connectionPool.add(connection);
+        } else {
+            log.warn("Attempted to release null connection");
+            return false;
+        }
     }
 
     @Override
@@ -88,9 +109,11 @@ public final class ConnectionPoolImpl implements ConnectionPool {
             try {
                 conn.close();
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                log.error("Failed to close connection during shutdown", e);
+                throw new ConnectionPoolException("Failed to close connection during shutdown", e);
             }
         }
         connectionPool.clear();
+        log.info("Connection pool has been shut down");
     }
 }
