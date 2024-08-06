@@ -1,5 +1,6 @@
 package en.pchz.service;
 
+import en.pchz.common.Language;
 import en.pchz.repository.TranslationHistoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -10,14 +11,17 @@ import java.util.List;
 @Service
 public class YandexTranslationService implements TranslationService {
     private final TranslationThreadsExecutorService threadsExecutorService;
+    private final TranslationApiService apiService;
     private final TranslationHistoryRepository repository;
 
 
     @Autowired
     public YandexTranslationService(
             TranslationHistoryRepository repository,
+            TranslationApiService apiService,
             TranslationThreadsExecutorService threadsExecutorService) {
         this.threadsExecutorService = threadsExecutorService;
+        this.apiService = apiService;
         this.repository = repository;
     }
 
@@ -36,7 +40,7 @@ public class YandexTranslationService implements TranslationService {
 
 
     @Override
-    public List<String> getAllSupportedLanguage() {
-        return null;
+    public List<Language> getAllSupportedLanguage() {
+        return apiService.makeSupportLanguagesRequest();
     }
 }

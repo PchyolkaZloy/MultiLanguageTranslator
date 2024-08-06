@@ -1,5 +1,11 @@
 package en.pchz.service;
 
+import en.pchz.common.Language;
+
+import java.util.List;
+
 public interface TranslationApiService {
-     String makeRequest(String word, String sourceLanguage, String targetLanguage);
+    String makeTranslateRequest(String word, String sourceLanguage, String targetLanguage);
+
+    List<Language> makeSupportLanguagesRequest();
 }

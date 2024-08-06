@@ -1,5 +1,9 @@
 package en.pchz.service;
 
+import en.pchz.exception.TranslationInterruptedException;
+import en.pchz.exception.TranslationThreadsExecutorServiceException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,6 +21,8 @@ public class YandexTranslationThreadsExecutorService implements TranslationThrea
     private final TranslationApiService apiService;
     private final ExecutorService executorService;
     private final Integer translationLimitPerSecond;
+    private static final Logger log = LoggerFactory.getLogger(YandexTranslationThreadsExecutorService.class);
+
 
     @Autowired
     public YandexTranslationThreadsExecutorService(
@@ -30,6 +36,7 @@ public class YandexTranslationThreadsExecutorService implements TranslationThrea
 
     @Override
     public String translateWordsByThreads(String sourceCode, String targetCode, String text) {
+        log.info("Starting translation text: from {} to {}", sourceCode, targetCode);
         List<String> words = Arrays.asList(text.split(" "));
         List<Future<String>> futureList = new ArrayList<>();
 
@@ -41,13 +48,16 @@ public class YandexTranslationThreadsExecutorService implements TranslationThrea
                 String word = words.get(j);
                 if (word.isEmpty()) continue;
 
-                futureList.add(executorService.submit(() -> apiService.makeRequest(word, sourceCode, targetCode)));
+                log.debug("Submitting translation task for word: {}", word);
+                futureList.add(executorService.submit(() -> apiService.makeTranslateRequest(word, sourceCode, targetCode)));
             }
 
             try {
+                log.debug("Throttling requests by sleeping for 1 second");
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                throw new RuntimeException("Thread interrupted during sleep", e);
+                log.error("Thread interrupted during sleep", e);
+                throw new TranslationInterruptedException("Thread interrupted during sleep", e);
             }
         }
 
@@ -55,11 +65,15 @@ public class YandexTranslationThreadsExecutorService implements TranslationThrea
         for (Future<String> future : futureList) {
             try {
                 builder.append(future.get()).append(" ");
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-                throw new RuntimeException("Failed to translate word", e);
+            } catch (InterruptedException e) {
+                log.error("Translation task interrupted", e);
+                throw new TranslationInterruptedException("Translation task interrupted", e);
+            } catch (ExecutionException e) {
+                log.error("Failed to execute translation task", e);
+                throw new TranslationThreadsExecutorServiceException("Failed to translate word", e);
             }
         }
+        log.info("Completed translation.");
 
         return builder.toString().trim();
     }
