@@ -15,8 +15,9 @@ dependencies {
     implementation(project(":service"))
     implementation("org.springframework.boot:spring-boot-starter-web")
 
-    testImplementation(platform("org.junit:junit-bom:5.9.1"))
+    testImplementation(platform("org.junit:junit-bom"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
 tasks.test {
