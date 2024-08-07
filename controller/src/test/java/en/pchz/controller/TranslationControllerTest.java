@@ -37,12 +37,14 @@ public class TranslationControllerTest {
 
     @Test
     void testTranslate_ValidData_Success() throws Exception {
+        // Arrange
         TranslationRequest request = new TranslationRequest("en", "es", "hello world");
         TranslationResponse expectedResponse = new TranslationResponse("hola mundo");
 
         Mockito.when(translationService.translate(any(), anyString(), anyString(), anyString(), anyString()))
                 .thenReturn("hola mundo");
 
+        // Act & Assert
         mockMvc.perform(MockMvcRequestBuilders.post("/translator/translate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -52,6 +54,7 @@ public class TranslationControllerTest {
 
     @Test
     void testTranslate_MissingData_BadRequest() throws Exception {
+        // Arrange
         TranslationRequest request = new TranslationRequest(null, "es", "hello world");
 
         SystemResponse expectedResponse = new SystemResponse(
@@ -59,6 +62,7 @@ public class TranslationControllerTest {
                 "Invalid request: sourceCode, targetCode, and text must not be null"
         );
 
+        // Act & Assert
         mockMvc.perform(MockMvcRequestBuilders.post("/translator/translate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -68,8 +72,8 @@ public class TranslationControllerTest {
 
     @Test
     void testTranslate_ApiError_TranslationApiException() throws Exception {
+        // Arrange
         TranslationRequest request = new TranslationRequest("en", "es", "hello world");
-
         Mockito.when(translationService.translate(any(), anyString(), anyString(), anyString(), anyString()))
                 .thenThrow(new TranslationApiException("API error", HttpStatus.INTERNAL_SERVER_ERROR.value()));
 
@@ -78,6 +82,7 @@ public class TranslationControllerTest {
                 "API error"
         );
 
+        // Act & Assert
         mockMvc.perform(MockMvcRequestBuilders.post("/translator/translate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -87,11 +92,13 @@ public class TranslationControllerTest {
 
     @Test
     void testGetLanguages_ValidData_Success() throws Exception {
+        // Arrange
         List<Language> languages = List.of(new Language("en", "English"), new Language("es", "Spanish"));
         LanguageResponse expectedResponse = new LanguageResponse(languages);
 
         Mockito.when(translationService.getAllSupportedLanguage()).thenReturn(languages);
 
+        // Act & Assert
         mockMvc.perform(MockMvcRequestBuilders.get("/translator/languages")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -100,6 +107,7 @@ public class TranslationControllerTest {
 
     @Test
     void testGetLanguages_ApiError_TranslationApiException() throws Exception {
+        // Arrange
         Mockito.when(translationService.getAllSupportedLanguage())
                 .thenThrow(new TranslationApiException("API error", HttpStatus.INTERNAL_SERVER_ERROR.value()));
 
@@ -108,6 +116,7 @@ public class TranslationControllerTest {
                 "API error"
         );
 
+        // Act & Assert
         mockMvc.perform(MockMvcRequestBuilders.get("/translator/languages")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError())
