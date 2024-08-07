@@ -1,5 +1,6 @@
 package en.pchz.service;
 
+import en.pchz.exception.TranslationApiException;
 import en.pchz.exception.TranslationInterruptedException;
 import en.pchz.exception.TranslationThreadsExecutorServiceException;
 import org.slf4j.Logger;
@@ -15,6 +16,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class YandexTranslationThreadsExecutorService implements TranslationThreadsExecutorService {
@@ -40,8 +43,16 @@ public class YandexTranslationThreadsExecutorService implements TranslationThrea
         List<String> words = Arrays.asList(text.split(" "));
         List<Future<String>> futureList = new ArrayList<>();
         int sentTaskAmount = 0;
+        AtomicBoolean exceptionOccurred = new AtomicBoolean(false);
+        AtomicReference<TranslationApiException> apiExceptionReference = new AtomicReference<>();
 
         while (sentTaskAmount < words.size()) {
+            if (exceptionOccurred.get()) {
+                log.warn("Exception occurred, cancelling all tasks...");
+                futureList.forEach(future -> future.cancel(true));
+                throw apiExceptionReference.get();
+            }
+
             int doneTaskAmount = (int) futureList.stream().filter(Future::isDone).count();
 
             if (doneTaskAmount > 0 || futureList.isEmpty()) {
@@ -54,7 +65,15 @@ public class YandexTranslationThreadsExecutorService implements TranslationThrea
                     if (word.isEmpty()) continue;
 
                     log.debug("Submitting additional translation task for word: {}", word);
-                    futureList.add(executorService.submit(() -> apiService.makeTranslateRequest(word, sourceCode, targetCode)));
+                    futureList.add(executorService.submit(() -> {
+                        try {
+                            return apiService.makeTranslateRequest(word, sourceCode, targetCode);
+                        } catch (TranslationApiException e) {
+                            exceptionOccurred.set(true);
+                            apiExceptionReference.set(e);
+                            throw e;
+                        }
+                    }));
                 }
                 sentTaskAmount += additionalTasks;
             }

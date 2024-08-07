@@ -1,16 +1,16 @@
 package en.pchz.controller;
 
-import en.pchz.common.LanguageResponse;
-import en.pchz.common.TranslationRequest;
-import en.pchz.common.TranslationResponse;
+import en.pchz.common.*;
+import en.pchz.exception.TranslationApiException;
 import en.pchz.service.TranslationService;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -24,29 +24,51 @@ public class TranslationController {
     }
 
     @PostMapping("/translate")
-    public TranslationResponse translate(
+    public ResponseEntity<?> translate(
             @RequestBody TranslationRequest translationRequest,
-            HttpServletRequest request,
-            HttpServletResponse response) {
-        response.setStatus(HttpStatus.OK.value());
+            HttpServletRequest request) {
         String clientIp = Optional.ofNullable(request.getHeader("X-Forwarded-For"))
                 .orElseGet(request::getRemoteAddr);
 
+        if (translationRequest.sourceCode() == null ||
+                translationRequest.targetCode() == null ||
+                translationRequest.text() == null) {
 
-        return new TranslationResponse(
-                200,
-                translationService.translate(
-                        LocalDateTime.now(),
-                        clientIp,
-                        translationRequest.sourceCode(),
-                        translationRequest.targetCode(),
-                        translationRequest.text()
-                )
-        );
+            return ResponseEntity
+                    .badRequest()
+                    .body(new SystemResponse(
+                            HttpStatus.BAD_REQUEST.value(),
+                            "Invalid request: sourceCode, targetCode, and text must not be null")
+                    );
+        }
+
+        try {
+            String translatedText = translationService.translate(
+                    LocalDateTime.now(),
+                    clientIp,
+                    translationRequest.sourceCode(),
+                    translationRequest.targetCode(),
+                    translationRequest.text()
+            );
+
+            return ResponseEntity.ok(new TranslationResponse(translatedText));
+        } catch (TranslationApiException apiException) {
+            return ResponseEntity
+                    .status(apiException.getStatusCode())
+                    .body(new SystemResponse(apiException.getStatusCode(), apiException.getMessage()));
+        }
     }
 
     @GetMapping("/languages")
-    public LanguageResponse languages(HttpServletResponse response) {
-        return new LanguageResponse(translationService.getAllSupportedLanguage());
+    public ResponseEntity<?> languages() {
+        try {
+            List<Language> languages = translationService.getAllSupportedLanguage();
+
+            return ResponseEntity.ok(new LanguageResponse(languages));
+        } catch (TranslationApiException apiException) {
+            return ResponseEntity
+                    .status(apiException.getStatusCode())
+                    .body(new SystemResponse(apiException.getStatusCode(), apiException.getMessage()));
+        }
     }
 }

@@ -8,11 +8,13 @@ import en.pchz.exception.RateLimitExceededException;
 import en.pchz.exception.TranslationApiServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
@@ -24,25 +26,25 @@ public class YandexTranslationApiService implements TranslationApiService {
     private final String languagesUrl;
     private final String key;
     private final RestTemplate restTemplate;
+    private final StatusHandlerService statusHandlerService;
     private static final Logger log = LoggerFactory.getLogger(YandexTranslationApiService.class);
 
+    @Autowired
     public YandexTranslationApiService(
             @Value("${translation.api.url.translate}") String translateUrl,
             @Value("${translation.api.url.languages}") String languagesUrl,
-            @Value("${translation.api.key}") String key) {
+            @Value("${translation.api.key}") String key,
+            StatusHandlerService statusHandlerService) {
         this.translateUrl = translateUrl;
         this.languagesUrl = languagesUrl;
         this.key = key;
+        this.statusHandlerService = statusHandlerService;
         this.restTemplate = new RestTemplate();
     }
 
     public String makeTranslateRequest(String word, String sourceLanguage, String targetLanguage) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Api-Key " + key);
-
         TranslationApiRequest requestBody = new TranslationApiRequest(sourceLanguage, targetLanguage, Collections.singletonList(word));
-        HttpEntity<TranslationApiRequest> entity = new HttpEntity<>(requestBody, headers);
+        HttpEntity<TranslationApiRequest> entity = new HttpEntity<>(requestBody, createHeaders());
 
         int maxRetries = 5;
         int retryCount = 0;
@@ -60,11 +62,14 @@ public class YandexTranslationApiService implements TranslationApiService {
                         return responseBody.translations().getFirst().text();
                     }
                 }
-                throw new TranslationApiServiceException("Unexpected response format or empty response");
-            } catch (HttpClientErrorException | HttpServerErrorException e) {
-                if (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+            } catch (ResourceAccessException accessException) {
+                log.error("Resource access failure to {}", translateUrl);
+                statusHandlerService.handleError(500, String.format("Resource access failure to %s", translateUrl));
+            } catch (HttpClientErrorException | HttpServerErrorException httpStatusCodeException) {
+                if (httpStatusCodeException.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
                     retryCount++;
                     log.warn("Rate limit exceeded. Retrying... Attempt: {}/{}", retryCount, maxRetries);
+
                     if (retryCount < maxRetries) {
                         try {
                             Thread.sleep(1000);
@@ -73,28 +78,24 @@ public class YandexTranslationApiService implements TranslationApiService {
                             throw new TranslationApiServiceException("Thread interrupted during sleep", interruptedException);
                         }
                     } else {
-                        log.error("Max retry limit reached. API request error: {}", e.getResponseBodyAsString());
-                        throw new RateLimitExceededException("Max retry limit reached. API request error: " + e.getResponseBodyAsString(), e);
+                        log.error("Max retry limit reached. API request error: {}", httpStatusCodeException.getResponseBodyAsString());
+                        throw new RateLimitExceededException(
+                                "Max retry limit reached. API request error: " + httpStatusCodeException.getResponseBodyAsString(),
+                                httpStatusCodeException);
                     }
                 } else {
-                    log.error("API request error: {}", e.getResponseBodyAsString());
-                    throw new TranslationApiServiceException("API request error: " + e.getResponseBodyAsString(), e);
+                    statusHandlerService.handleError(
+                            httpStatusCodeException.getStatusCode().value(),
+                            httpStatusCodeException.getResponseBodyAsString());
                 }
-            } catch (Exception e) {
-                log.error("An error occurred while translating text", e);
-                throw new TranslationApiServiceException("An error occurred while translating text", e);
             }
         }
-        throw new TranslationApiServiceException("Translation failed after " + maxRetries + " attempts.");
+        return null;
     }
 
     @Override
     public List<Language> makeSupportLanguagesRequest() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Api-Key " + key);
-
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        HttpEntity<Void> entity = new HttpEntity<>(createHeaders());
 
         try {
             ResponseEntity<LanguageApiResponse> response = restTemplate.exchange(
@@ -109,14 +110,25 @@ public class YandexTranslationApiService implements TranslationApiService {
                 return response.getBody().languages();
             } else {
                 log.error("Failed to retrieve supported languages. Unexpected response format.");
-                throw new TranslationApiServiceException("Failed to retrieve supported languages. Unexpected response format.");
+                statusHandlerService.handleError(response.getStatusCode().value(), "message");
             }
-        } catch (HttpClientErrorException | HttpServerErrorException e) {
-            log.error("API request error: {}", e.getResponseBodyAsString());
-            throw new TranslationApiServiceException("API request error: " + e.getResponseBodyAsString(), e);
-        } catch (Exception e) {
-            log.error("An error occurred while retrieving supported languages", e);
-            throw new TranslationApiServiceException("An error occurred while retrieving supported languages", e);
+        } catch (ResourceAccessException accessException) {
+            log.error("Resource access failure to {}", translateUrl);
+            statusHandlerService.handleError(500, String.format("Resource access failure to %s", translateUrl));
+        } catch (HttpClientErrorException | HttpServerErrorException httpStatusCodeException) {
+            statusHandlerService.handleError(
+                    httpStatusCodeException.getStatusCode().value(),
+                    httpStatusCodeException.getResponseBodyAsString()
+            );
         }
+        return null;
+    }
+
+    private HttpHeaders createHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Api-Key " + key);
+
+        return headers;
     }
 }

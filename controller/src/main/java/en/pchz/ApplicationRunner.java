@@ -8,8 +8,8 @@ import org.springframework.context.annotation.PropertySource;
 @SpringBootApplication(scanBasePackages = "en.pchz")
 @ConfigurationPropertiesScan
 @PropertySource("classpath:database.properties")
-public class Main {
+public class ApplicationRunner {
     public static void main(String[] args) {
-        var context = SpringApplication.run(Main.class, args);
+        SpringApplication.run(ApplicationRunner.class, args);
     }
 }
