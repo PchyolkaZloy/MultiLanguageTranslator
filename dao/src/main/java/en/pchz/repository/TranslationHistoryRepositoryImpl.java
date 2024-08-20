@@ -27,40 +27,57 @@ public class TranslationHistoryRepositoryImpl implements TranslationHistoryRepos
     @Override
     public void save(LocalDateTime requestTime, String ipAddress, String inputText, String translatedText) {
         String sql = "INSERT INTO translation_requests (request_time, ip_address, input_text, translated_text) VALUES (?, ?, ?, ?)";
-
         Connection connection = null;
-        PreparedStatement preparedStatement = null;
 
         try {
             connection = connectionPool.getConnection();
-            preparedStatement = connection.prepareStatement(sql);
+            executeUpdate(connection, sql, requestTime, ipAddress, inputText, translatedText);
+            connection.commit();
+            log.info("Successfully saved translation history for user with IP {}", ipAddress);
+        } catch (ConnectionPoolException e) {
+            handleException("Failed to get connection from pool", e);
+        } catch (SQLException e) {
+            handleSQLException(connection, e);
+        } finally {
+            releaseConnection(connection);
+        }
+    }
 
+    private void executeUpdate(Connection connection, String sql, LocalDateTime requestTime, String ipAddress, String inputText, String translatedText) throws SQLException {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setTimestamp(1, Timestamp.valueOf(requestTime));
             preparedStatement.setString(2, ipAddress);
             preparedStatement.setString(3, inputText);
             preparedStatement.setString(4, translatedText);
-
             preparedStatement.executeUpdate();
-            log.info("Successfully saved translation history for user with ip {}", ipAddress);
-        } catch (NullPointerException e) {
-            log.error("Failed to get prepared statement from connection", e);
-            throw new TranslationHistoryException("Error saving translation history due to prepared statement issue", e);
-        } catch (ConnectionPoolException e) {
-            log.error("Failed to get connection from pool", e);
-            throw new TranslationHistoryException("Error saving translation history due to connection pool issue", e);
         } catch (SQLException e) {
-            log.error("Failed to save translation history", e);
-            throw new TranslationHistoryException("Error saving translation history", e);
-        } finally {
+            log.error("Failed to execute update for translation history", e);
+            throw e;
+        }
+    }
+
+    private void handleException(String message, Exception e) {
+        log.error(message, e);
+        throw new TranslationHistoryException(message, e);
+    }
+
+    private void handleSQLException(Connection connection, SQLException e) {
+        try {
+            if (connection != null) {
+                connection.rollback();
+            }
+        } catch (SQLException rollbackException) {
+            log.error("Failed to rollback transaction", rollbackException);
+        }
+        handleException("Failed to save translation history", e);
+    }
+
+    private void releaseConnection(Connection connection) {
+        if (connection != null) {
             try {
-                if (preparedStatement != null) {
-                    preparedStatement.close();
-                }
-                if (connection != null) {
-                    connectionPool.releaseConnection(connection);
-                }
-            } catch (SQLException e) {
-                log.warn("Failed to close resources after saving translation history", e);
+                connectionPool.releaseConnection(connection);
+            } catch (ConnectionPoolException e) {
+                log.warn("Failed to release connection back to pool", e);
             }
         }
     }
