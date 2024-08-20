@@ -1,7 +1,10 @@
-package en.pchz.service;
+package en.pchz.service.implementation;
 
 import en.pchz.common.Language;
 import en.pchz.repository.TranslationHistoryRepository;
+import en.pchz.service.abstraction.TranslationApiService;
+import en.pchz.service.abstraction.TranslationService;
+import en.pchz.service.abstraction.TranslationThreadsExecutorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

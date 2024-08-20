@@ -1,6 +1,7 @@
-package en.pchz.service;
+package en.pchz.service.implementation;
 
 import en.pchz.exception.TranslationApiException;
+import en.pchz.service.abstraction.StatusHandlerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
