@@ -3,7 +3,7 @@ package en.pchz.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import en.pchz.common.*;
 import en.pchz.exception.TranslationApiException;
-import en.pchz.service.TranslationService;
+import en.pchz.service.abstraction.TranslationService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @SpringBootTest
-public class TranslationControllerTest {
+public class TranslationRestControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -48,7 +48,7 @@ public class TranslationControllerTest {
                 .thenReturn("hola mundo");
 
         // Act & Assert
-        mockMvc.perform(MockMvcRequestBuilders.post("/translator/translate")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/translate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -62,11 +62,11 @@ public class TranslationControllerTest {
 
         SystemResponse expectedResponse = new SystemResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                "Invalid request: sourceCode, targetCode, and text must not be null"
+                "Invalid request: sourceCode, targetCode, and sourceText must not be null"
         );
 
         // Act & Assert
-        mockMvc.perform(MockMvcRequestBuilders.post("/translator/translate")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/translate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -86,7 +86,7 @@ public class TranslationControllerTest {
         );
 
         // Act & Assert
-        mockMvc.perform(MockMvcRequestBuilders.post("/translator/translate")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/translate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isInternalServerError())
@@ -102,7 +102,7 @@ public class TranslationControllerTest {
         Mockito.when(translationService.getAllSupportedLanguage()).thenReturn(languages);
 
         // Act & Assert
-        mockMvc.perform(MockMvcRequestBuilders.get("/translator/languages")
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/languages")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().json(objectMapper.writeValueAsString(expectedResponse)));
@@ -120,7 +120,7 @@ public class TranslationControllerTest {
         );
 
         // Act & Assert
-        mockMvc.perform(MockMvcRequestBuilders.get("/translator/languages")
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/languages")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().json(objectMapper.writeValueAsString(expectedResponse)));

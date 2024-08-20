@@ -1,0 +1,125 @@
+package en.pchz.common;
+
+
+public enum LanguageCode {
+    AFRIKAANS("af", "Afrikaans"),
+    AMHARIC("am", "Amharic"),
+    ARABIC("ar", "Arabic"),
+    AZERBAIJANI("az", "Azerbaijani"),
+    BASHKIR("ba", "Bashkir"),
+    BELARUSIAN("be", "Belarusian"),
+    BULGARIAN("bg", "Bulgarian"),
+    BENGALI("bn", "Bengali"),
+    BOSNIAN("bs", "Bosnian"),
+    CATALAN("ca", "Catalan"),
+    CEBUANO("ceb", "Cebuano"),
+    CZECH("cs", "Czech"),
+    CHUVASH("cv", "Chuvash"),
+    WELSH("cy", "Welsh"),
+    DANISH("da", "Danish"),
+    GERMAN("de", "German"),
+    GREEK("el", "Greek"),
+    EMOJI("emj", "Emoji"),
+    ENGLISH("en", "English"),
+    ESPERANTO("eo", "Esperanto"),
+    SPANISH("es", "Spanish"),
+    ESTONIAN("et", "Estonian"),
+    BASQUE("eu", "Basque"),
+    PERSIAN("fa", "Persian"),
+    FINNISH("fi", "Finnish"),
+    FRENCH("fr", "French"),
+    IRISH("ga", "Irish"),
+    SCOTTISH_GAELIC("gd", "Scottish (Gaelic)"),
+    GALICIAN("gl", "Galician"),
+    GUJARATI("gu", "Gujarati"),
+    HEBREW("he", "Hebrew"),
+    HINDI("hi", "Hindi"),
+    CROATIAN("hr", "Croatian"),
+    HAITIAN("ht", "Haitian"),
+    HUNGARIAN("hu", "Hungarian"),
+    ARMENIAN("hy", "Armenian"),
+    INDONESIAN("id", "Indonesian"),
+    ICELANDIC("is", "Icelandic"),
+    ITALIAN("it", "Italian"),
+    JAPANESE("ja", "Japanese"),
+    JAVANESE("jv", "Javanese"),
+    GEORGIAN("ka", "Georgian"),
+    KAZAKH_LATIN("kazlat", "Kazakh (Latin)"),
+    KAZAKH("kk", "Kazakh"),
+    KHMER("km", "Khmer"),
+    KANNADA("kn", "Kannada"),
+    KOREAN("ko", "Korean"),
+    KIRGHIZ("ky", "Kirghiz"),
+    LATIN("la", "Latin"),
+    LUXEMBOURGISH("lb", "Luxembourgish"),
+    LAO("lo", "Lao"),
+    LITHUANIAN("lt", "Lithuanian"),
+    LATVIAN("lv", "Latvian"),
+    MALAGASY("mg", "Malagasy"),
+    MARI("mhr", "Mari"),
+    MAORI("mi", "Maori"),
+    MACEDONIAN("mk", "Macedonian"),
+    MALAYALAM("ml", "Malayalam"),
+    MONGOLIAN("mn", "Mongolian"),
+    MARATHI("mr", "Marathi"),
+    WESTERN_MARI("mrj", "Western Mari"),
+    MALAY("ms", "Malay"),
+    MALTESE("mt", "Maltese"),
+    BURMESE("my", "Burmese"),
+    NEPALI("ne", "Nepali"),
+    DUTCH("nl", "Dutch"),
+    NORWEGIAN("no", "Norwegian"),
+    OSSETIAN("os", "Ossetian"),
+    PUNJABI("pa", "Punjabi"),
+    PAPIAMENTO("pap", "Papiamento"),
+    POLISH("pl", "Polish"),
+    PORTUGUESE("pt", "Portuguese"),
+    PORTUGUESE_BRAZILIAN("pt-BR", "Portuguese (Brazilian)"),
+    ROMANIAN("ro", "Romanian"),
+    RUSSIAN("ru", "Russian"),
+    YAKUT("sah", "Yakut"),
+    SINHALA("si", "Sinhala"),
+    SLOVAK("sk", "Slovak"),
+    SLOVENIAN("sl", "Slovenian"),
+    ALBANIAN("sq", "Albanian"),
+    SERBIAN("sr", "Serbian"),
+    SERBIAN_LATIN("sr-Latn", "Serbian (Latin)"),
+    SUNDANESE("su", "Sundanese"),
+    SWEDISH("sv", "Swedish"),
+    SWAHILI("sw", "Swahili"),
+    TAMIL("ta", "Tamil"),
+    TELUGU("te", "Telugu"),
+    TAJIK("tg", "Tajik"),
+    THAI("th", "Thai"),
+    TAGALOG("tl", "Tagalog"),
+    TURKISH("tr", "Turkish"),
+    TATAR("tt", "Tatar"),
+    UDMURT("udm", "Udmurt"),
+    UKRAINIAN("uk", "Ukrainian"),
+    URDU("ur", "Urdu"),
+    UZBEK("uz", "Uzbek"),
+    UZBEK_CYRILLIC("uzbcyr", "Uzbek (Cyrillic)"),
+    VIETNAMESE("vi", "Vietnamese"),
+    XHOSA("xh", "Xhosa"),
+    YIDDISH("yi", "Yiddish"),
+    CHINESE("zh", "Chinese"),
+    ZULU("zu", "Zulu");
+
+    private final String code;
+    private final String language;
+
+    LanguageCode(String code, String language) {
+        this.code = code;
+        this.language = language;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("[%s] %s", code.toUpperCase(), language);
+    }
+}
+
