@@ -12,9 +12,10 @@ The application supports multiple languages and provides an easy-to-use RESTful 
 ## Features
 
 - **Multithreaded Translation Requests**: The application sends translation requests concurrently, adhering to API rate limits.
-- **Custom Error Handling**: Comprehensive error handling for all HTTP status codes returned by the translation API.
+- **Custom Error Handling**: The application handles various HTTP errors. If an error occurs during translation, the application retries the request up to a maximum number of attempts if the error is related to rate limiting.
 - **Translation History**: Saves translation history to a PostgreSQL database.
-- **API Endpoints**: Provides RESTful endpoints for translating text and retrieving supported languages.
+- **REST API**: Provides endpoints for translating text and retrieving supported languages.
+- **Web Interface**: Allows users to translate text directly from the browser.
 
 ## Technologies Used
 
@@ -24,6 +25,7 @@ The application supports multiple languages and provides an easy-to-use RESTful 
 - **PostgreSQL** (16): Database for storing translation history.
 - **JDBC**: For database interaction.
 - **RestTemplate**: For making HTTP requests to the translation API.
+- **Thymeleaf** (for HTML templating)
 - **JUnit 5**: For writing unit  tests.
 - **Docker**: Used for running PostgreSQL.
 
@@ -84,11 +86,12 @@ To build and run the application, use the following Gradle commands:
 
 The application will start on `http://localhost:8080`.
 
-## API Endpoints
-
+## Usage
+### REST API
+The REST API is accessible at `/api/v1/`. Below are the available endpoints:
 ### 1. Translate Text
 
-- **URL**: `/translator/translate`
+- **URL**: `/api/v1/translate`
 - **Method**: `POST`
 - **Description**: Translates a text from one language to another.
 
@@ -127,7 +130,7 @@ The application will start on `http://localhost:8080`.
 
 ### 2. Get Supported Languages
 
-- **URL**: `/translator/languages`
+- **URL**: `/api/v1/languages`
 - **Method**: `GET`
 - **Description**: Retrieves a list of languages supported by the translation API.
 
@@ -142,9 +145,20 @@ The application will start on `http://localhost:8080`.
 }
 ```
 
-## Error Handling
+### Web Interface
 
-The application handles various HTTP errors returned by the translation API. If an error occurs during translation, the application retries the request up to a maximum number of attempts if the error is related to rate limiting.
+The web interface is accessible at the root URL `/`.
+
+- **Main Page**: Users can select source and target languages, input text, and view the translated result.
+- **Error Page**: Redirects to an error page if the translation fails.
+
+### Screenshots
+
+#### Main Page
+![Main Page](images/main.png)
+
+#### Error Page
+![Error Page](images/error.png)
 
 ## Testing
 
