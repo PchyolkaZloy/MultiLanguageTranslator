@@ -34,7 +34,11 @@ public final class ConnectionPoolImpl implements ConnectionPool {
         List<Connection> pool = new ArrayList<>(initialPoolSize);
         for (int i = 0; i < initialPoolSize; i++) {
             try {
-                pool.add(DriverManager.getConnection(url, username, password));
+                var connection = DriverManager.getConnection(url, username, password);
+                connection.setAutoCommit(false);
+                connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
+                pool.add(connection);
             } catch (SQLException e) {
                 log.error("Failed to initialize connection pool", e);
                 throw new ConnectionPoolException("Failed to initialize connection pool", e);
@@ -48,15 +52,14 @@ public final class ConnectionPoolImpl implements ConnectionPool {
         this.maxTimeout = maxTimeout;
         this.connectionPool = pool;
         this.usedConnections = new ArrayList<>();
-        log.info(String.format("""
-                        Connection pool success initialized with params:
-                        Url - %s
-                        Username - %s
-                        Max pool size - %d
-                        Init pool size - %d
-                        Max timeout - %d
-                        """,
-                url, username, maxPoolSize, initialPoolSize, maxTimeout));
+        log.info("""
+                Connection pool success initialized with params:
+                Url - {}
+                Username - {}
+                Max pool size - {}
+                Init pool size - {}
+                Max timeout - {}
+                """, url, username, maxPoolSize, initialPoolSize, maxTimeout);
     }
 
 

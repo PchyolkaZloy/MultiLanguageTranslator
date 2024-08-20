@@ -1,8 +1,10 @@
-package en.pchz.service;
+package en.pchz.service.implementation;
 
 import en.pchz.exception.TranslationApiException;
 import en.pchz.exception.TranslationInterruptedException;
 import en.pchz.exception.TranslationThreadsExecutorServiceException;
+import en.pchz.service.abstraction.TranslationApiService;
+import en.pchz.service.abstraction.TranslationThreadsExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,14 +42,14 @@ public class YandexTranslationThreadsExecutorService implements TranslationThrea
     @Override
     public String translateWordsByThreads(String sourceCode, String targetCode, String text) {
         log.info("Starting translation text: from {} to {}", sourceCode, targetCode);
+
         List<String> words = Arrays.asList(text.split(" "));
         List<Future<String>> futureList = new ArrayList<>();
-        int sentTaskAmount = 0;
-        AtomicBoolean exceptionOccurred = new AtomicBoolean(false);
         AtomicReference<TranslationApiException> apiExceptionReference = new AtomicReference<>();
+        int sentTaskAmount = 0;
 
         while (sentTaskAmount < words.size()) {
-            if (exceptionOccurred.get()) {
+            if (apiExceptionReference.get() != null) {
                 log.warn("Exception occurred, cancelling all tasks...");
                 futureList.forEach(future -> future.cancel(true));
                 throw apiExceptionReference.get();
@@ -69,7 +71,6 @@ public class YandexTranslationThreadsExecutorService implements TranslationThrea
                         try {
                             return apiService.makeTranslateRequest(word, sourceCode, targetCode);
                         } catch (TranslationApiException e) {
-                            exceptionOccurred.set(true);
                             apiExceptionReference.set(e);
                             throw e;
                         }

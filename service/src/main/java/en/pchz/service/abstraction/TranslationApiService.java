@@ -1,4 +1,4 @@
-package en.pchz.service;
+package en.pchz.service.abstraction;
 
 import en.pchz.common.Language;
 

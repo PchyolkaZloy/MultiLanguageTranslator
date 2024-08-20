@@ -1,4 +1,4 @@
-package en.pchz.service;
+package en.pchz.service.implementation;
 
 import en.pchz.common.Language;
 import en.pchz.common.LanguageApiResponse;
@@ -6,6 +6,8 @@ import en.pchz.common.TranslationApiRequest;
 import en.pchz.common.TranslationApiResponse;
 import en.pchz.exception.RateLimitExceededException;
 import en.pchz.exception.TranslationApiServiceException;
+import en.pchz.service.abstraction.StatusHandlerService;
+import en.pchz.service.abstraction.TranslationApiService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,8 +45,14 @@ public class YandexTranslationApiService implements TranslationApiService {
     }
 
     public String makeTranslateRequest(String word, String sourceLanguage, String targetLanguage) {
-        TranslationApiRequest requestBody = new TranslationApiRequest(sourceLanguage, targetLanguage, Collections.singletonList(word));
-        HttpEntity<TranslationApiRequest> entity = new HttpEntity<>(requestBody, createHeaders());
+        HttpEntity<TranslationApiRequest> entity = new HttpEntity<>(
+                new TranslationApiRequest(
+                        sourceLanguage,
+                        targetLanguage,
+                        Collections.singletonList(word)
+                ),
+                createHeaders()
+        );
 
         int maxRetries = 5;
         int retryCount = 0;
