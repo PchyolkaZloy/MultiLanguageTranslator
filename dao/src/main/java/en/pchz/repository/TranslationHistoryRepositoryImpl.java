@@ -50,6 +50,9 @@ public class TranslationHistoryRepositoryImpl implements TranslationHistoryRepos
             preparedStatement.setString(3, inputText);
             preparedStatement.setString(4, translatedText);
             preparedStatement.executeUpdate();
+        } catch (NullPointerException e) {
+            log.error("Failed to execute update for translation history. PreparedStatement is null", e);
+            throw new TranslationHistoryException("Failed to execute update for translation history. PreparedStatement is null", e);
         } catch (SQLException e) {
             log.error("Failed to execute update for translation history", e);
             throw e;
